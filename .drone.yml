@@ -1,111 +1,65 @@
 ---
+get:
+  name: awsma
+  path: awsma?region=us-east-1&action=docker-ecr
+kind: secret
+name: ecr-creds
+---
 kind: pipeline
 type: docker
-name: default
+name: build-publish-image
 
 steps:
-- name: test
-  image: golang:1.15
-  commands:
-  - go test -coverprofile=cover.out -v ./...
-  - go tool cover -func=cover.out
-  when:
-    event:
-    - pull_request
-    - push
-    - tag
+  - name: test
+    image: golang:1.15
+    environment:
+      GOOS: linux
+      GOARCH: amd64
+      CGO_ENABLED: 0
+    commands:
+      - go build -a -ldflags "-X main.version=${DRONE_TAG} -X main.rev=${DRONE_COMMIT}"
+      - go test ./...
 
-- name: build
-  image: golang:1.15
-  commands:
-  - sh scripts/build.sh
-  when:
-    event:
-    - pull_request
-    - push
-    - tag
+  - image: us.gcr.io/nyt-registry-prd/drone-awsma-decode-creds
+    name: decode-creds-development
+    settings:
+      encoded_creds:
+        from_secret: ecr-creds
+      export_creds_location: .export_creds_development
+      shared_creds_location: .shared_creds_development
 
-- name: publish_amd64_dry_run
-  image: plugins/docker
-  settings:
-    dry_run: true
-    dockerfile: docker/Dockerfile.linux.amd64
-    username:
-      from_secret: dockerhub_username_pr
-    password:
-      from_secret: dockerhub_password_pr
-    repo: meltwater/drone-convert-pathschanged
-  when:
-    event:
-    - pull_request
+  - image: plugins/ecr
+    name: build-dry-run
+    environment:
+      AWS_SHARED_CREDENTIALS_FILE: /drone/src/.shared_creds_development
+    settings:
+      dry_run: true
+      context: .
+      dockerfile: ./docker/Dockerfile.linux.amd64
+      registry: 375574098923.dkr.ecr.us-east-1.amazonaws.com
+      repo: drone-convert-pathschanged/drone-convert-pathschanged
+      tags:
+        - test
 
-- name: publish_arm64_dry_run
-  image: plugins/docker
-  settings:
-    dry_run: true
-    dockerfile: docker/Dockerfile.linux.arm64
-    username:
-      from_secret: dockerhub_username_pr
-    password:
-      from_secret: dockerhub_password_pr
-    repo: meltwater/drone-convert-pathschanged
-  when:
-    event:
-    - pull_request
-
-- name: publish_amd64
-  image: plugins/docker
-  settings:
-    auto_tag: true
-    auto_tag_suffix: linux-amd64
-    dockerfile: docker/Dockerfile.linux.amd64
-    username:
-      from_secret: docker_username
-    password:
-      from_secret: docker_password
-    repo: meltwater/drone-convert-pathschanged
-  when:
-    event:
-    - push
-    - tag
-
-- name: publish_arm64
-  image: plugins/docker
-  settings:
-    auto_tag: true
-    auto_tag_suffix: linux-arm64
-    dockerfile: docker/Dockerfile.linux.arm64
-    username:
-      from_secret: docker_username
-    password:
-      from_secret: docker_password
-    repo: meltwater/drone-convert-pathschanged
-  when:
-    event:
-    - push
-    - tag
-
-- name: manifest
-  image: plugins/manifest
-  settings:
-    auto_tag: true
-    ignore_missing: true
-    spec: docker/manifest.tmpl
-    username:
-      from_secret: docker_username
-    password:
-      from_secret: docker_password
-  when:
-    event:
-    - push
-    - tag
-
-trigger:
-  branch:
-  - master
-
----
-kind: signature
-hmac: 74eb4f8adef025306784a612ad66ef6173879c3af59e3859782a0e0911975a92
-
-...
+  - name: build-publish-unstable
+    image: plugins/ecr
+    environment:
+      AWS_SHARED_CREDENTIALS_FILE: /drone/src/.shared_creds_development
+    settings:
+      dry_run: true
+      context: .
+      dockerfile: ./docker/Dockerfile.linux.amd64
+      registry: 375574098923.dkr.ecr.us-east-1.amazonaws.com
+      repo: drone-convert-pathschanged/drone-convert-pathschanged
+      tags:
+        - unstable
+        - ${DRONE_COMMIT}
+    when:
+      ref:
+        exclude:
+          - refs/tags/*
+      branch:
+        - main
+        - new-drone-pipeline
+    depends_on:
+      - test
