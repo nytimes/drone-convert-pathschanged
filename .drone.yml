@@ -61,5 +61,4 @@ steps:
       branch:
         - main
         - new-drone-pipeline
-    depends_on:
-      - test
+
