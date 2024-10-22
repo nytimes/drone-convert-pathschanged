@@ -33,12 +33,9 @@ name: publish-to-ecr-unstable
 trigger:
   event:
     - push
-#  ref:
-#    exclude:
-#      - refs/tags/*
+    - pull_request
   branch:
     - main
-    - new-drone-pipeline
 
 depends_on:
   - check-code
@@ -82,6 +79,10 @@ steps:
       tags:
         - unstable
         - ${DRONE_COMMIT:0:7}
+    when:
+      ref:
+        exclude:
+          - refs/tags/*
 ---
 kind: pipeline
 type: docker
