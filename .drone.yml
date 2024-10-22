@@ -28,7 +28,7 @@ steps:
 #      - go build -a -ldflags "-X main.version=${DRONE_TAG} -X main.rev=${DRONE_COMMIT}"
 #      - go test ./...
 
-  - name: build
+  - name: go-build
     image: golang:1.15
     commands:
       - sh scripts/build.sh
@@ -39,7 +39,7 @@ steps:
 #        - tag
 
   - image: plugins/ecr
-    name: build-dry-run
+    name: image-build-dry-run
     environment:
       AWS_SHARED_CREDENTIALS_FILE: /drone/src/.shared_creds_development
     settings:
@@ -51,7 +51,7 @@ steps:
       tags:
         - test
 
-  - name: build-publish-unstable
+  - name: image-build-publish-unstable
     image: plugins/ecr
     environment:
       AWS_SHARED_CREDENTIALS_FILE: /drone/src/.shared_creds_development
@@ -59,7 +59,7 @@ steps:
       context: .
       dockerfile: ./docker/Dockerfile.linux.amd64
       registry: 375574098923.dkr.ecr.us-east-1.amazonaws.com
-      repo: drone-convert-pathschanged/drone-convert-pathschanged
+      repo: drone-convert-pathschanged
       tags:
         - unstable
         - latest
