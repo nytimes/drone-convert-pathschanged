@@ -50,7 +50,42 @@ steps:
     depends_on:
       - decode-creds
       - go-build
+---
+kind: pipeline
+type: docker
+name: publish-pr-unstable
 
+trigger:
+  event:
+    - pull_request
+  branch:
+    - main
+
+depends_on:
+  - check-code
+
+steps:
+  - image: us.gcr.io/nyt-registry-prd/drone-awsma-decode-creds
+    name: decode-creds
+    settings:
+      encoded_creds:
+        from_secret: ecr-creds
+      export_creds_location: .export_creds_development
+      shared_creds_location: .shared_creds_development
+
+  - name: image-build-publish-unstable
+    image: plugins/ecr
+    environment:
+      AWS_SHARED_CREDENTIALS_FILE: /drone/src/.shared_creds_development
+    settings:
+      context: .
+      dockerfile: ./docker/Dockerfile
+      registry: 375574098923.dkr.ecr.us-east-1.amazonaws.com
+      repo: drone-convert-pathschanged
+      tags:
+        - pr-${DRONE_PULL_REQUEST}-${DRONE_COMMIT:0:7}
+    depends_on:
+      - decode-creds
 ---
 kind: pipeline
 type: docker
@@ -61,7 +96,6 @@ trigger:
     - push
   branch:
     - main
-    - update-go-version
 
 depends_on:
   - check-code
@@ -101,7 +135,6 @@ steps:
           - refs/tags/*
       branch:
         - main
-        - update-go-version
 ---
 kind: pipeline
 type: docker
