@@ -5,6 +5,12 @@ get:
 kind: secret
 name: ecr-creds
 ---
+get:
+  name: shared_ecr_dev
+  path: awsma?region=us-east-1
+kind: secret
+name: ecr-creds-dev
+---
 kind: pipeline
 type: docker
 name: check-code
@@ -53,7 +59,7 @@ steps:
 ---
 kind: pipeline
 type: docker
-name: publish-pr-unstable
+name: publish-pr-unstable-dev
 
 trigger:
   event:
@@ -69,7 +75,7 @@ steps:
     name: decode-creds
     settings:
       encoded_creds:
-        from_secret: ecr-creds
+        from_secret: ecr-creds-dev
       export_creds_location: .export_creds_development
       shared_creds_location: .shared_creds_development
 
@@ -80,7 +86,7 @@ steps:
     settings:
       context: .
       dockerfile: ./docker/Dockerfile
-      registry: 375574098923.dkr.ecr.us-east-1.amazonaws.com
+      registry: 446821023914.dkr.ecr.us-east-1.amazonaws.com
       repo: drone-convert-pathschanged
       tags:
         - pr-${DRONE_PULL_REQUEST}-${DRONE_COMMIT:0:7}
