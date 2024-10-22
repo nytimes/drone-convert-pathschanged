@@ -1,6 +1,6 @@
 ---
 get:
-  name: shared_ecr_dev
+  name: shared_ecr_prd
   path: awsma?region=us-east-1&action=docker-ecr
 kind: secret
 name: ecr-creds
