@@ -25,6 +25,19 @@ steps:
     commands:
       - sh scripts/build.sh
 
+  - image: plugins/ecr
+    name: image-build-dry-run
+    environment:
+      AWS_SHARED_CREDENTIALS_FILE: /drone/src/.shared_creds_development
+    settings:
+      dry_run: true
+      context: .
+      dockerfile: ./docker/Dockerfile.linux.amd64
+      registry: 375574098923.dkr.ecr.us-east-1.amazonaws.com
+      repo: drone-convert-pathschanged/drone-convert-pathschanged
+      tags:
+        - test
+
 ---
 kind: pipeline
 type: docker
@@ -33,7 +46,6 @@ name: publish-to-ecr-unstable
 trigger:
   event:
     - push
-    - pull_request
   branch:
     - main
 
@@ -54,19 +66,6 @@ steps:
     commands:
       - sh scripts/build.sh
 
-  - image: plugins/ecr
-    name: image-build-dry-run
-    environment:
-      AWS_SHARED_CREDENTIALS_FILE: /drone/src/.shared_creds_development
-    settings:
-      dry_run: true
-      context: .
-      dockerfile: ./docker/Dockerfile.linux.amd64
-      registry: 375574098923.dkr.ecr.us-east-1.amazonaws.com
-      repo: drone-convert-pathschanged/drone-convert-pathschanged
-      tags:
-        - test
-
   - name: image-build-publish-unstable
     image: plugins/ecr
     environment:
@@ -79,10 +78,7 @@ steps:
       tags:
         - unstable
         - ${DRONE_COMMIT:0:7}
-    when:
-      ref:
-        exclude:
-          - refs/tags/*
+
 ---
 kind: pipeline
 type: docker
