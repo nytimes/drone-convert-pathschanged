@@ -42,9 +42,9 @@ steps:
     settings:
       dry_run: true
       context: .
-      dockerfile: ./docker/Dockerfile.linux.amd64
+      dockerfile: ./docker/Dockerfile
       registry: 375574098923.dkr.ecr.us-east-1.amazonaws.com
-      repo: drone-convert-pathschanged/drone-convert-pathschanged
+      repo: drone-convert-pathschanged
       tags:
         - test
     depends_on:
@@ -61,6 +61,7 @@ trigger:
     - push
   branch:
     - main
+    - update-go-version
 
 depends_on:
   - check-code
@@ -85,7 +86,7 @@ steps:
       AWS_SHARED_CREDENTIALS_FILE: /drone/src/.shared_creds_development
     settings:
       context: .
-      dockerfile: ./docker/Dockerfile.linux.amd64
+      dockerfile: ./docker/Dockerfile
       registry: 375574098923.dkr.ecr.us-east-1.amazonaws.com
       repo: drone-convert-pathschanged
       tags:
