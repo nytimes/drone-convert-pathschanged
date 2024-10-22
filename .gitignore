@@ -1,3 +1,5 @@
 drone-convert-pathschanged
 release/*
 .env
+.idea/
+.DS_Store
