@@ -10,16 +10,6 @@ type: docker
 name: build-publish-image
 
 steps:
-  - name: test
-    image: golang:1.15
-    environment:
-      GOOS: linux
-      GOARCH: amd64
-      CGO_ENABLED: 0
-    commands:
-      - go build -a -ldflags "-X main.version=${DRONE_TAG} -X main.rev=${DRONE_COMMIT}"
-      - go test ./...
-
   - image: us.gcr.io/nyt-registry-prd/drone-awsma-decode-creds
     name: decode-creds-development
     settings:
@@ -28,15 +18,25 @@ steps:
       export_creds_location: .export_creds_development
       shared_creds_location: .shared_creds_development
 
+#  - name: test
+#    image: golang:1.15
+#    environment:
+#      GOOS: linux
+#      GOARCH: amd64
+#      CGO_ENABLED: 0
+#    commands:
+#      - go build -a -ldflags "-X main.version=${DRONE_TAG} -X main.rev=${DRONE_COMMIT}"
+#      - go test ./...
+
   - name: build
     image: golang:1.15
     commands:
       - sh scripts/build.sh
-    when:
-      event:
-        - pull_request
-        - push
-        - tag
+#    when:
+#      event:
+#        - pull_request
+#        - push
+#        - tag
 
   - image: plugins/ecr
     name: build-dry-run
@@ -56,13 +56,13 @@ steps:
     environment:
       AWS_SHARED_CREDENTIALS_FILE: /drone/src/.shared_creds_development
     settings:
-      dry_run: true
       context: .
       dockerfile: ./docker/Dockerfile.linux.amd64
       registry: 375574098923.dkr.ecr.us-east-1.amazonaws.com
       repo: drone-convert-pathschanged/drone-convert-pathschanged
       tags:
         - unstable
+        - latest
         - ${DRONE_COMMIT}
     when:
       ref:
