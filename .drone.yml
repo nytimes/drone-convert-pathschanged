@@ -19,7 +19,7 @@ steps:
       shared_creds_location: .shared_creds_development
 
   - name: run-tests
-    image: golang:1.15
+    image: golang:1.23
     environment:
       GOOS: linux
       GOARCH: amd64
@@ -29,7 +29,7 @@ steps:
       - go test ./...
 
   - name: go-build
-    image: golang:1.15
+    image: golang:1.23
     commands:
       - sh scripts/build.sh
     depends_on:
@@ -75,7 +75,7 @@ steps:
       shared_creds_location: .shared_creds_development
 
   - name: go-build
-    image: golang:1.15
+    image: golang:1.23
     commands:
       - sh scripts/build.sh
 
@@ -122,7 +122,7 @@ steps:
       shared_creds_location: .shared_creds_development
 
   - name: go-build
-    image: golang:1.15
+    image: golang:1.23
     commands:
       - sh scripts/build.sh
 
