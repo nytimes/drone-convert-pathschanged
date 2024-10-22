@@ -9,10 +9,6 @@ kind: pipeline
 type: docker
 name: check-code
 
-trigger:
-  event:
-    - push
-
 steps:
   - image: us.gcr.io/nyt-registry-prd/drone-awsma-decode-creds
     name: decode-creds
@@ -117,12 +113,13 @@ depends_on:
   - check-code
 
 steps:
-  - name: decode-creds
-    image: us.gcr.io/nyt-registry-prd/drone-awsma-decode-creds
+  - image: us.gcr.io/nyt-registry-prd/drone-awsma-decode-creds
+    name: decode-creds
     settings:
       encoded_creds:
-        from_secret: shared_ecr_prd
-      shared_cred_location: .shared_creds
+        from_secret: ecr-creds
+      export_creds_location: .export_creds_development
+      shared_creds_location: .shared_creds_development
 
   - name: go-build
     image: golang:1.15
