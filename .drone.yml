@@ -28,6 +28,16 @@ steps:
       export_creds_location: .export_creds_development
       shared_creds_location: .shared_creds_development
 
+  - name: build
+    image: golang:1.15
+    commands:
+      - sh scripts/build.sh
+    when:
+      event:
+        - pull_request
+        - push
+        - tag
+
   - image: plugins/ecr
     name: build-dry-run
     environment:
