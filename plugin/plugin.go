@@ -176,7 +176,7 @@ func (p *plugin) Convert(ctx context.Context, req *converter.Request) (*drone.Co
 				return nil, err
 			}
 		case "gitee":
-			changedFiles, err = providers.GetGiteeFilesChanged(req.Repo, req.Build, token)
+			changedFiles, err = providers.GetGiteeFilesChanged(req.Repo, req.Build, p.params.Token)
 			if err != nil {
 				return nil, err
 			}
