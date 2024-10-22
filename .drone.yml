@@ -19,7 +19,7 @@ steps:
       shared_creds_location: .shared_creds_development
 
   - name: run-tests
-    image: golang:1.15
+    image: golang:1.23
     environment:
       GOOS: linux
       GOARCH: amd64
@@ -29,7 +29,7 @@ steps:
       - go test ./...
 
   - name: go-build
-    image: golang:1.15
+    image: golang:1.23
     commands:
       - sh scripts/build.sh
     depends_on:
@@ -42,9 +42,9 @@ steps:
     settings:
       dry_run: true
       context: .
-      dockerfile: ./docker/Dockerfile.linux.amd64
+      dockerfile: ./docker/Dockerfile
       registry: 375574098923.dkr.ecr.us-east-1.amazonaws.com
-      repo: drone-convert-pathschanged/drone-convert-pathschanged
+      repo: drone-convert-pathschanged
       tags:
         - test
     depends_on:
@@ -61,6 +61,7 @@ trigger:
     - push
   branch:
     - main
+    - update-go-version
 
 depends_on:
   - check-code
@@ -75,7 +76,7 @@ steps:
       shared_creds_location: .shared_creds_development
 
   - name: go-build
-    image: golang:1.15
+    image: golang:1.23
     commands:
       - sh scripts/build.sh
 
@@ -85,14 +86,14 @@ steps:
       AWS_SHARED_CREDENTIALS_FILE: /drone/src/.shared_creds_development
     settings:
       context: .
-      dockerfile: ./docker/Dockerfile.linux.amd64
+      dockerfile: ./docker/Dockerfile
       registry: 375574098923.dkr.ecr.us-east-1.amazonaws.com
       repo: drone-convert-pathschanged
       tags:
         - unstable
         - ${DRONE_COMMIT:0:7}
     depends_on:
-      - go-build
+      #- go-build
       - decode-creds
     when:
       ref:
@@ -100,6 +101,7 @@ steps:
           - refs/tags/*
       branch:
         - main
+        - update-go-version
 ---
 kind: pipeline
 type: docker
@@ -122,7 +124,7 @@ steps:
       shared_creds_location: .shared_creds_development
 
   - name: go-build
-    image: golang:1.15
+    image: golang:1.23
     commands:
       - sh scripts/build.sh
 
