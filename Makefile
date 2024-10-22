@@ -31,7 +31,7 @@ build: ## Build binary of extension
 	CGO_ENABLED=0 go build ${MOD_FLAGS} -trimpath -a -v ${BUILD_FLAGS}
 
 build-image: ## Build docker image of extension
-	docker build -t drone-convert-pathschanged .
+	docker build -t drone-convert-pathschanged . -f ./docker/Dockerfile
 
 test: ## Run all tests without race detector
 	 CGO_ENABLED=0 go test ${MOD_FLAGS}  -v ./...
