@@ -3,3 +3,5 @@ release/*
 .env
 .idea/
 .DS_Store
+
+integration/*
