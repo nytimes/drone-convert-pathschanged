@@ -93,7 +93,7 @@ steps:
         - unstable
         - ${DRONE_COMMIT:0:7}
     depends_on:
-      - go-build
+      #- go-build
       - decode-creds
     when:
       ref:
@@ -101,6 +101,7 @@ steps:
           - refs/tags/*
       branch:
         - main
+        - update-go-version
 ---
 kind: pipeline
 type: docker
