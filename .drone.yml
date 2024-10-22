@@ -129,7 +129,7 @@ steps:
   - name: build_publish_stable
     image: plugins/ecr
     environment:
-      AWS_SHARED_CREDENTIALS_FILE: /drone/src/.shared_creds
+      AWS_SHARED_CREDENTIALS_FILE: /drone/src/.shared_creds_development
     settings:
       context: .
       dockerfile: ./docker/Dockerfile.linux.amd64
