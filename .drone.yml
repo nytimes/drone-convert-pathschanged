@@ -7,7 +7,41 @@ name: ecr-creds
 ---
 kind: pipeline
 type: docker
-name: build-publish-image
+name: check-code
+
+steps:
+  - name: run-tests
+    image: golang:1.15
+    environment:
+      GOOS: linux
+      GOARCH: amd64
+      CGO_ENABLED: 0
+    commands:
+      - go build -a -ldflags "-X main.version=${DRONE_TAG} -X main.rev=${DRONE_COMMIT}"
+      - go test ./...
+
+  - name: go-build
+    image: golang:1.15
+    commands:
+      - sh scripts/build.sh
+
+---
+kind: pipeline
+type: docker
+name: publish-to-ecr-unstable
+
+trigger:
+  event:
+    - push
+#  ref:
+#    exclude:
+#      - refs/tags/*
+  branch:
+    - main
+    - new-drone-pipeline
+
+depends_on:
+  - check-code
 
 steps:
   - image: us.gcr.io/nyt-registry-prd/drone-awsma-decode-creds
@@ -18,25 +52,10 @@ steps:
       export_creds_location: .export_creds_development
       shared_creds_location: .shared_creds_development
 
-#  - name: test
-#    image: golang:1.15
-#    environment:
-#      GOOS: linux
-#      GOARCH: amd64
-#      CGO_ENABLED: 0
-#    commands:
-#      - go build -a -ldflags "-X main.version=${DRONE_TAG} -X main.rev=${DRONE_COMMIT}"
-#      - go test ./...
-
   - name: go-build
     image: golang:1.15
     commands:
       - sh scripts/build.sh
-#    when:
-#      event:
-#        - pull_request
-#        - push
-#        - tag
 
   - image: plugins/ecr
     name: image-build-dry-run
@@ -62,13 +81,46 @@ steps:
       repo: drone-convert-pathschanged
       tags:
         - unstable
-        - latest
-        - ${DRONE_COMMIT}
-    when:
-      ref:
-        exclude:
-          - refs/tags/*
-      branch:
-        - main
-        - new-drone-pipeline
+        - ${DRONE_COMMIT:0:7}
+---
+kind: pipeline
+type: docker
+name: publish-to-ecr-stable
 
+trigger:
+  event:
+    - tag
+
+depends_on:
+  - check-code
+
+steps:
+  - name: decode-creds
+    image: us.gcr.io/nyt-registry-prd/drone-awsma-decode-creds
+    settings:
+      encoded_creds:
+        from_secret: shared_ecr_prd
+      shared_cred_location: .shared_creds
+
+  - name: go-build
+    image: golang:1.15
+    commands:
+      - sh scripts/build.sh
+
+  - name: build_publish_stable
+    image: plugins/ecr
+    environment:
+      AWS_SHARED_CREDENTIALS_FILE: /drone/src/.shared_creds
+    settings:
+      context: .
+      dockerfile: ./docker/Dockerfile.linux.amd64
+      registry: 375574098923.dkr.ecr.us-east-1.amazonaws.com
+      repo: drone-convert-pathschanged/drone-convert-pathschanged
+      tags:
+        - stable
+        - ${DRONE_TAG}
+      build_args_from_env:
+        - DRONE_TAG
+    depends_on:
+      - go-build
+      - decode-creds
