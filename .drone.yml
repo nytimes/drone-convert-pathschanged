@@ -36,6 +36,8 @@ steps:
     image: golang:1.15
     commands:
       - sh scripts/build.sh
+    depends_on:
+      - run-tests
 
   - image: plugins/ecr
     name: image-build-dry-run
@@ -51,6 +53,7 @@ steps:
         - test
     depends_on:
       - decode-creds
+      - go-build
 
 ---
 kind: pipeline
