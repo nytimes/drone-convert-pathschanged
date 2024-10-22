@@ -134,7 +134,7 @@ steps:
       context: .
       dockerfile: ./docker/Dockerfile.linux.amd64
       registry: 375574098923.dkr.ecr.us-east-1.amazonaws.com
-      repo: drone-convert-pathschanged/drone-convert-pathschanged
+      repo: drone-convert-pathschanged
       tags:
         - stable
         - ${DRONE_TAG}
