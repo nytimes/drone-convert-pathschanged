@@ -9,7 +9,19 @@ kind: pipeline
 type: docker
 name: check-code
 
+trigger:
+  event:
+    - push
+
 steps:
+  - image: us.gcr.io/nyt-registry-prd/drone-awsma-decode-creds
+    name: decode-creds
+    settings:
+      encoded_creds:
+        from_secret: ecr-creds
+      export_creds_location: .export_creds_development
+      shared_creds_location: .shared_creds_development
+
   - name: run-tests
     image: golang:1.15
     environment:
@@ -37,6 +49,8 @@ steps:
       repo: drone-convert-pathschanged/drone-convert-pathschanged
       tags:
         - test
+    depends_on:
+      - decode-creds
 
 ---
 kind: pipeline
@@ -54,7 +68,7 @@ depends_on:
 
 steps:
   - image: us.gcr.io/nyt-registry-prd/drone-awsma-decode-creds
-    name: decode-creds-development
+    name: decode-creds
     settings:
       encoded_creds:
         from_secret: ecr-creds
@@ -78,7 +92,15 @@ steps:
       tags:
         - unstable
         - ${DRONE_COMMIT:0:7}
-
+    depends_on:
+      - go-build
+      - decode-creds
+    when:
+      ref:
+        exclude:
+          - refs/tags/*
+      branch:
+        - main
 ---
 kind: pipeline
 type: docker
