@@ -149,6 +149,11 @@ func (p *plugin) Convert(ctx context.Context, req *converter.Request) (*drone.Co
 		return nil, err
 	}
 
+	//token := req.Token.Access
+	//if p.params.Token != "" {
+	//	token = p.params.Token
+	//}
+
 	if pathSeen {
 		requestLogger.Infoln("a path field was seen")
 
@@ -156,7 +161,7 @@ func (p *plugin) Convert(ctx context.Context, req *converter.Request) (*drone.Co
 
 		switch p.provider {
 		case "github":
-			changedFiles, err = providers.GetGithubFilesChanged(req.Repo, req.Build, p.params.Token, p.params.GithubServer)
+			changedFiles, err = providers.GetGithubFilesChanged(req.Repo, req.Build, req.Token.Access, p.params.GithubServer)
 			if err != nil {
 				return nil, err
 			}
