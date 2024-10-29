@@ -34,13 +34,6 @@ steps:
       - go build -a -ldflags "-X main.version=${DRONE_TAG} -X main.rev=${DRONE_COMMIT}"
       - go test ./...
 
-  - name: go-build
-    image: golang:1.23
-    commands:
-      - sh scripts/build.sh
-    depends_on:
-      - run-tests
-
   - image: plugins/ecr
     name: image-build-dry-run
     environment:
@@ -55,7 +48,6 @@ steps:
         - test
     depends_on:
       - decode-creds
-      - go-build
 ---
 kind: pipeline
 type: docker
@@ -108,22 +100,47 @@ depends_on:
 
 steps:
   - image: us.gcr.io/nyt-registry-prd/drone-awsma-decode-creds
-    name: decode-creds
+    name: decode-creds-dev
     settings:
       encoded_creds:
-        from_secret: ecr-creds
+        from_secret: ecr-creds-dev
       export_creds_location: .export_creds_development
       shared_creds_location: .shared_creds_development
 
-  - name: go-build
-    image: golang:1.23
-    commands:
-      - sh scripts/build.sh
 
-  - name: image-build-publish-unstable
+  - image: us.gcr.io/nyt-registry-prd/drone-awsma-decode-creds
+    name: decode-creds-prd
+    settings:
+      encoded_creds:
+        from_secret: ecr-creds
+      export_creds_location: .export_creds_prd
+      shared_creds_location: .shared_creds_prd
+
+  - name: image-build-publish-unstable-dev
     image: plugins/ecr
     environment:
       AWS_SHARED_CREDENTIALS_FILE: /drone/src/.shared_creds_development
+    settings:
+      context: .
+      dockerfile: ./docker/Dockerfile
+      registry: 446821023914.dkr.ecr.us-east-1.amazonaws.com
+      repo: drone-convert-pathschanged
+      tags:
+        - unstable
+        - ${DRONE_COMMIT:0:7}
+    depends_on:
+      - decode-creds-dev
+    when:
+      ref:
+        exclude:
+          - refs/tags/*
+      branch:
+        - main
+
+  - name: image-build-publish-unstable-prd
+    image: plugins/ecr
+    environment:
+      AWS_SHARED_CREDENTIALS_FILE: /drone/src/.shared_creds_prd
     settings:
       context: .
       dockerfile: ./docker/Dockerfile
@@ -133,8 +150,7 @@ steps:
         - unstable
         - ${DRONE_COMMIT:0:7}
     depends_on:
-      #- go-build
-      - decode-creds
+      - decode-creds-prd
     when:
       ref:
         exclude:
@@ -159,13 +175,8 @@ steps:
     settings:
       encoded_creds:
         from_secret: ecr-creds
-      export_creds_location: .export_creds_development
-      shared_creds_location: .shared_creds_development
-
-  - name: go-build
-    image: golang:1.23
-    commands:
-      - sh scripts/build.sh
+      export_creds_location: .export_creds_prd
+      shared_creds_location: .shared_creds_prd
 
   - name: build_publish_stable
     image: plugins/ecr
@@ -173,7 +184,7 @@ steps:
       AWS_SHARED_CREDENTIALS_FILE: /drone/src/.shared_creds_development
     settings:
       context: .
-      dockerfile: ./docker/Dockerfile.linux.amd64
+      dockerfile: ./docker/Dockerfile
       registry: 375574098923.dkr.ecr.us-east-1.amazonaws.com
       repo: drone-convert-pathschanged
       tags:
@@ -182,5 +193,4 @@ steps:
       build_args_from_env:
         - DRONE_TAG
     depends_on:
-      - go-build
       - decode-creds
