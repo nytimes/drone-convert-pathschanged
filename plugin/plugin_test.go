@@ -145,6 +145,7 @@ steps:
 // github provider
 func TestNewGithubCommitExcludeStep(t *testing.T) {
 	gock.New("https://api.github.com").
+		MatchHeader("Authorization", "^Bearer token_from_env$").
 		Get("/repos/meltwater/drone-convert-pathschanged/commits/6ee3cf41d995a79857e0db41c47bf619e6546571").
 		Reply(200).
 		Type("application/json").
@@ -168,7 +169,7 @@ steps:
 `
 
 	params := &Params{
-		Token: "invalidtoken",
+		Token: "token_from_env",
 	}
 
 	req := &converter.Request{
