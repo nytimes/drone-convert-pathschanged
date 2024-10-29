@@ -27,6 +27,7 @@ type (
 		GithubServer      string
 		StashServer       string
 		Token             string
+		UseDroneAuth      bool
 	}
 
 	plugin struct {
@@ -119,6 +120,15 @@ func New(provider string, p *Params) converter.Plugin {
 	}
 }
 
+// GetToken returns the token to use for the SCM provider
+func (p *plugin) GetToken(req *converter.Request) string {
+	if p.params.UseDroneAuth {
+		return req.Token.Access
+	}
+
+	return p.params.Token
+}
+
 func (p *plugin) Convert(ctx context.Context, req *converter.Request) (*drone.Config, error) {
 
 	// set some default fields for logs
@@ -149,10 +159,7 @@ func (p *plugin) Convert(ctx context.Context, req *converter.Request) (*drone.Co
 		return nil, err
 	}
 
-	//token := req.Token.Access
-	//if p.params.Token != "" {
-	//	token = p.params.Token
-	//}
+	token := p.GetToken(req)
 
 	if pathSeen {
 		requestLogger.Infoln("a path field was seen")
@@ -161,7 +168,7 @@ func (p *plugin) Convert(ctx context.Context, req *converter.Request) (*drone.Co
 
 		switch p.provider {
 		case "github":
-			changedFiles, err = providers.GetGithubFilesChanged(req.Repo, req.Build, req.Token.Access, p.params.GithubServer)
+			changedFiles, err = providers.GetGithubFilesChanged(req.Repo, req.Build, token, p.params.GithubServer)
 			if err != nil {
 				return nil, err
 			}
@@ -171,12 +178,12 @@ func (p *plugin) Convert(ctx context.Context, req *converter.Request) (*drone.Co
 				return nil, err
 			}
 		case "stash":
-			changedFiles, err = providers.GetStashFilesChanged(req.Repo, req.Build, p.params.StashServer, p.params.Token, scm.ListOptions{})
+			changedFiles, err = providers.GetStashFilesChanged(req.Repo, req.Build, p.params.StashServer, token, scm.ListOptions{})
 			if err != nil {
 				return nil, err
 			}
 		case "gitee":
-			changedFiles, err = providers.GetGiteeFilesChanged(req.Repo, req.Build, p.params.Token)
+			changedFiles, err = providers.GetGiteeFilesChanged(req.Repo, req.Build, token)
 			if err != nil {
 				return nil, err
 			}

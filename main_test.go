@@ -174,3 +174,18 @@ func TestValidateGiteeMissing(t *testing.T) {
 		t.Errorf("wanted %s, got %s", want, got)
 	}
 }
+
+func TestValidateForcedDroneAuth(t *testing.T) {
+	// drone uses a secret for authentication
+	s := &spec{
+		Secret:       "abcdefg",
+		Provider:     "github",
+		UseDroneAuth: true,
+	}
+
+	got := validate(s)
+
+	if got != nil {
+		t.Errorf("wanted no errors, got %s", got)
+	}
+}
