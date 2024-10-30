@@ -28,8 +28,9 @@ type (
 		Text   bool   `envconfig:"DRONE_LOGS_TEXT"`
 		Secret string `envconfig:"DRONE_SECRET"`
 
-		Provider string `envconfig:"PROVIDER"`
-		Token    string `envconfig:"TOKEN"`
+		UseDroneAuth bool   `default:"false" envconfig:"USE_DRONE_AUTH"` // set to 'true' to use Drone token for auth (passed from Drone CI in drone-go > 1.7.1)
+		Provider     string `envconfig:"PROVIDER"`
+		Token        string `envconfig:"TOKEN"`
 		// BB_ADDRESS is deprecated in favor of STASH_SERVER, it will be removed in a future version
 		BitBucketAddress  string `envconfig:"BB_ADDRESS"`
 		BitBucketUser     string `envconfig:"BITBUCKET_USER"`
@@ -67,7 +68,7 @@ func validate(spec *spec) error {
 			return fmt.Errorf("unsupported provider")
 		}
 	}
-	if spec.Token == "" && (spec.Provider == "github" || spec.Provider == "bitbucket-server" || spec.Provider == "stash") {
+	if spec.Token == "" && spec.UseDroneAuth == false && (spec.Provider == "github" || spec.Provider == "bitbucket-server" || spec.Provider == "stash") {
 		return fmt.Errorf("missing token")
 	}
 	if spec.BitBucketUser == "" && spec.Provider == "bitbucket" {
@@ -89,7 +90,7 @@ func validate(spec *spec) error {
 		return fmt.Errorf("missing stash server")
 	}
 
-	if spec.Token == "" && spec.Provider == "gitee" {
+	if spec.Token == "" && spec.UseDroneAuth == false && spec.Provider == "gitee" {
 		return fmt.Errorf("missing gitee token")
 	}
 
@@ -132,6 +133,7 @@ func main() {
 		GithubServer:      spec.GithubServer,
 		Token:             spec.Token,
 		StashServer:       spec.StashServer,
+		UseDroneAuth:      spec.UseDroneAuth,
 	}
 
 	handler := converter.Handler(

@@ -145,6 +145,7 @@ steps:
 // github provider
 func TestNewGithubCommitExcludeStep(t *testing.T) {
 	gock.New("https://api.github.com").
+		MatchHeader("Authorization", "^Bearer token_from_env$").
 		Get("/repos/meltwater/drone-convert-pathschanged/commits/6ee3cf41d995a79857e0db41c47bf619e6546571").
 		Reply(200).
 		Type("application/json").
@@ -168,7 +169,7 @@ steps:
 `
 
 	params := &Params{
-		Token: "invalidtoken",
+		Token: "token_from_env",
 	}
 
 	req := &converter.Request{
@@ -592,6 +593,94 @@ steps:
       - '*'
   commands:
   - echo "This step will be excluded when CONTRIBUTING.md is changed"
+  image: busybox
+  name: message
+name: default
+`
+	want := &drone.Config{
+		Data: after,
+	}
+
+	if diff := cmp.Diff(config.Data, want.Data); diff != "" {
+		t.Errorf("Unexpected Results")
+		t.Log(diff)
+	}
+}
+
+// use Drone auth token
+func TestNewUseDroneAuth(t *testing.T) {
+	defer gock.Off()
+
+	// WE check that `MatchHeader` catch value of token that is passed from Drone
+	gock.New("https://api.github.com").
+		MatchHeader("Authorization", "^Bearer drone_token$").
+		Get("/repos/meltwater/drone-convert-pathschanged/commits/6ee3cf41d995a79857e0db41c47bf619e6546571").
+		Reply(200).
+		Type("application/json").
+		SetHeaders(mockHeaders).
+		File("../providers/testdata/github/commit.json")
+
+	before := `
+kind: pipeline
+type: docker
+name: default
+
+steps:
+- name: message
+  image: busybox
+  commands:
+  - echo "This step will be excluded when .drone.yml is changed"
+  when:
+    paths:
+      exclude:
+      - .drone.yml
+`
+
+	params := &Params{
+		Token:        "invalidtoken",
+		UseDroneAuth: true,
+	}
+
+	req := &converter.Request{
+		Token: drone.Token{
+			Access:  "drone_token",
+			Refresh: "drone_refresh_token",
+		},
+		Build: drone.Build{
+			Before: "",
+			After:  "6ee3cf41d995a79857e0db41c47bf619e6546571",
+		},
+		Config: drone.Config{
+			Data: before,
+		},
+		Repo: drone.Repo{
+			Namespace: "meltwater",
+			Name:      "drone-convert-pathschanged",
+			Slug:      "meltwater/drone-convert-pathschanged",
+			Config:    ".drone.yml",
+		},
+	}
+
+	plugin := New("github", params)
+
+	config, err := plugin.Convert(noContext, req)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	after := `kind: pipeline
+type: docker
+steps:
+- when:
+    paths:
+      exclude:
+      - .drone.yml
+    event:
+      exclude:
+      - '*'
+  commands:
+  - echo "This step will be excluded when .drone.yml is changed"
   image: busybox
   name: message
 name: default
