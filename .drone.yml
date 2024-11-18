@@ -203,7 +203,7 @@ trigger:
   event:
     - push
   branch:
-    - fix-release-process
+    - main
 
 depends_on:
   - check-code
