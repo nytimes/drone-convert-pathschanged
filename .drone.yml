@@ -194,3 +194,42 @@ steps:
         - DRONE_TAG
     depends_on:
       - decode-creds
+---
+kind: pipeline
+type: docker
+name: publish-to-ecr-prd-unstable
+
+trigger:
+  event:
+    - push
+  branch:
+    - fix-release-process
+
+depends_on:
+  - check-code
+
+steps:
+  - image: us.gcr.io/nyt-registry-prd/drone-awsma-decode-creds
+    name: decode-creds
+    settings:
+      encoded_creds:
+        from_secret: ecr-creds
+      export_creds_location: .export_creds_prd
+      shared_creds_location: .shared_creds_prd
+
+  - name: build_publish_stable
+    image: plugins/ecr
+    environment:
+      AWS_SHARED_CREDENTIALS_FILE: /drone/src/.shared_creds_development
+    settings:
+      context: .
+      dockerfile: ./docker/Dockerfile
+      registry: 375574098923.dkr.ecr.us-east-1.amazonaws.com
+      repo: drone-convert-pathschanged
+      tags:
+        - stable
+        - ${DRONE_TAG}
+      build_args_from_env:
+        - DRONE_TAG
+    depends_on:
+      - decode-creds
