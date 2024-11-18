@@ -181,7 +181,7 @@ steps:
   - name: build_publish_stable
     image: plugins/ecr
     environment:
-      AWS_SHARED_CREDENTIALS_FILE: /drone/src/.shared_creds_development
+      AWS_SHARED_CREDENTIALS_FILE: /drone/src/.shared_creds_prd
     settings:
       context: .
       dockerfile: ./docker/Dockerfile
@@ -220,7 +220,7 @@ steps:
   - name: build_publish_stable
     image: plugins/ecr
     environment:
-      AWS_SHARED_CREDENTIALS_FILE: /drone/src/.shared_creds_development
+      AWS_SHARED_CREDENTIALS_FILE: /drone/src/.shared_creds_prd
     settings:
       context: .
       dockerfile: ./docker/Dockerfile
@@ -228,8 +228,6 @@ steps:
       repo: drone-convert-pathschanged
       tags:
         - stable
-        - ${DRONE_TAG}
-      build_args_from_env:
-        - DRONE_TAG
+        - ${DRONE_COMMIT:0:7}
     depends_on:
       - decode-creds
