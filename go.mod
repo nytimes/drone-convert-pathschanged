@@ -6,7 +6,7 @@ require (
 	github.com/bmatcuk/doublestar v1.3.4
 	github.com/buildkite/yaml v2.1.0+incompatible
 	github.com/drone/drone-go v1.7.2-0.20220308165842-f9e4fe31c2af
-	github.com/drone/go-scm v1.38.8
+	github.com/drone/go-scm v1.39.0
 	github.com/google/go-cmp v0.6.0
 	github.com/h2non/gock v1.2.0
 	github.com/joho/godotenv v1.5.1
